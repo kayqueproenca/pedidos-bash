@@ -4,6 +4,7 @@ source variaveis_gerais
 
 #CONSULTA POR NOME E/OU ID DO PRODUTO
 consulta_id_nome(){
+COUNT=0
 while : ; do
    clear
    echo "$DELIMITADOR"
@@ -17,6 +18,16 @@ while : ; do
      echo -e "Total de itens econtrados: ${RETORNO}"
      if [ $RETORNO -eq 0 ] ; then
       echo "Sem resultado para o item buscado!"
+      let COUNT++
+     fi
+     if [ $COUNT -gt 3 ] ; then
+       readarray -t LISTA < <(mariadb -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT DISTINCT NOME FROM produto ;" | awk -F "\n" 'NR!=1{print $1}')
+       echo -e "${WHITE_BOLD}Seguem algumas sugestões de itens${END_COLOR}"
+       select OPC in "${LISTA[@]}" ; do
+         mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE NOME REGEXP '${OPC}';" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:"$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
+         COUNT=0
+         break
+       done
      fi
    else
      clear
@@ -96,6 +107,7 @@ while : ; do
           if [ $COUNT -ge 3 ] ; then
            clear
            echo "O valor inicial deve ser MENOR que o final"
+           COUNT=0
            continue
           fi
         done

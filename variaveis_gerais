@@ -1,0 +1,18 @@
+########## VARIAVEIS ACESSO BANCO################
+DBUSER="kayque"
+DBPASS="cptm1992"
+BASE="mercado_teste"
+DBHOST="localhost"
+
+########## VARIAVEIS PROMPT###################
+DELIMITADOR="############################"
+PS3="-> "
+
+########## VARIAVEIS CORES ##################
+RED_BLINK="\e[5;31m"
+RED_BOLD="\e[1;31m"
+WHITE_BOLD="\e[1;97m"
+BLUE_BOLD="\e[1;34m"
+WHITE_BLINK="\e[5;97m"
+END_COLOR="\e[0m"
+

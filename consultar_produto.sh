@@ -6,9 +6,12 @@ source variaveis_gerais
 consulta_id_nome(){
 COUNT=0
 while : ; do
-   clear
-   echo "$DELIMITADOR"
-   read -p "Digite o NOME/ID do item: " ITEM
+   ITEM=""
+   while [ -z $ITEM ] ; do
+    clear
+    echo "$DELIMITADOR"
+    read -p "Digite o NOME/ID do item: " ITEM
+   done
    if [[ $ITEM =~ [a-z|A-Z] ]] ;then 
      echo $DELIMITADOR
      echo -e "Segue o retorno do item ${ITEM}"

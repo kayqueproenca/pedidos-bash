@@ -14,5 +14,6 @@ RED_BOLD="\e[1;31m"
 WHITE_BOLD="\e[1;97m"
 BLUE_BOLD="\e[1;34m"
 WHITE_BLINK="\e[5;97m"
+YELLOW_BOLD="\e[1;33m"
 END_COLOR="\e[0m"
 

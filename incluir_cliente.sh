@@ -13,7 +13,7 @@ while : ; do
   NOME_CLIENTE[$COUNT]=""
   clear
   echo $DELIMITADOR
-   while ! [[ ${CPF[$COUNT]} =~ ^[0-9]+$ ]] ; do
+   while ! [[ ${CPF[$COUNT]} =~ ^[0-9]+$ ]]; do
     read -p "DIGITE O CPF DO CLIENTE (SOMENTE NÚMEROS) -> " CPF[$COUNT]
    done
 

@@ -1,4 +1,6 @@
 #! /usr/bin/env bash
+
+#Caso queria debugar o código, descomente a linha abaixo
 #set -x
 source variaveis_gerais
 
@@ -37,7 +39,7 @@ campo_mudar(){
       ;;
     "PREÇO")
       CAMPO="PRECO"
-      while ! [[ $VALOR =~ ^[0-9]\.+[0-9]+$ ]] ; do
+      while ! [[ $VALOR =~ ^[0-9]+\.[0-9]+$ ]] ; do
        read -p "Digite o novo valor para \"PREÇO\"(Ex 5.00): " VALOR
       done
       break

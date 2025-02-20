@@ -12,11 +12,12 @@ while : ; do
     echo "$DELIMITADOR"
     read -p "Digite o NOME/ID do item: " ITEM
    done
+
    if [[ $ITEM =~ [a-z|A-Z] ]] ;then 
      echo $DELIMITADOR
      echo -e "Segue o retorno do item ${ITEM}"
-     mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE NOME REGEXP '^[${ITEM}]';" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
-     RETORNO=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "select count(*) count from produto where NOME REGEXP '^[${ITEM}]';" | awk 'NR!=1{print $1}')
+     mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE NOME REGEXP '^${ITEM}';" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
+     RETORNO=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "select count(*) count from produto where NOME REGEXP '^${ITEM}';" | awk 'NR!=1{print $1}')
      echo $DELIMITADOR
      echo -e "Total de itens econtrados: ${RETORNO}"
      if [ $RETORNO -eq 0 ] ; then

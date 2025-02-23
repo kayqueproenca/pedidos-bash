@@ -4,6 +4,8 @@ DBPASS="cptm1992"
 BASE="mercado_teste"
 DBHOST="localhost"
 
+CONEXAO="mariadb -u$DBUSER -p$DBPASS -h$DBHOST $BASE"
+
 ########## VARIAVEIS PROMPT ###################
 DELIMITADOR="#################################"
 PS3="-> "

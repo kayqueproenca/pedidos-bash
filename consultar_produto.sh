@@ -1,5 +1,8 @@
 #! /usr/bin/env bash
+
 source variaveis_gerais
+
+#Caso queira debugar, descomente a linha abaixo
 #set -x
 
 #CONSULTA POR NOME E/OU ID DO PRODUTO
@@ -16,7 +19,7 @@ while : ; do
    if [[ $ITEM =~ [a-z|A-Z] ]] ;then 
      echo $DELIMITADOR
      echo -e "Segue o retorno do item ${ITEM}"
-     mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE NOME REGEXP '^${ITEM}';" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
+     $CONEXAO -Be "SELECT * FROM produto WHERE NOME REGEXP '^${ITEM}';" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
      RETORNO=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "select count(*) count from produto where NOME REGEXP '^${ITEM}';" | awk 'NR!=1{print $1}')
      echo $DELIMITADOR
      echo -e "Total de itens econtrados: ${RETORNO}"

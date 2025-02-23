@@ -95,7 +95,7 @@ consulta_item(){
       if [[ $ITEM =~ ^[0-9]+$ ]] ; then
        clear
        echo $DELIMITADOR
-       mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE ID = $ITEM ;" | awk -F "\t" 'NR!=1{print "Segue os dados do item:\nID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: "$6}'
+       $CONEXAO -Be "SELECT * FROM produto WHERE ID = $ITEM ;" | awk -F "\t" 'NR!=1{print "Segue os dados do item:\nID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: "$6}'
        CONTAGEM=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT COUNT(ID) FROM produto WHERE ID = $ITEM ;" | awk -F "\n" 'NR!=1{print $1}')
        if [ $CONTAGEM -le 0 ] ; then
         echo $DELIMITADOR

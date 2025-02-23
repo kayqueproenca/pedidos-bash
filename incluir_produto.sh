@@ -7,7 +7,7 @@ source variaveis_gerais
 #Inicio da função para coleta de dados.
 coleta_info_prod(){
  COUNT=0
- DISPONIVEL=$( mariadb -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT ID FROM produto ORDER BY ID DESC LIMIT 1;" | awk -F"\t" 'NR!=1{print $1}')
+ DISPONIVEL=$( $CONEXAO -Be "SELECT ID FROM produto ORDER BY ID DESC LIMIT 1;" | awk -F"\t" 'NR!=1{print $1}')
  while : ; do
   while true; do
    ID[$COUNT]=""
@@ -24,14 +24,14 @@ coleta_info_prod(){
    while ! [[ ${ID[$COUNT]} =~ ^[0-9]+$ ]]; do
     read -p "Informe o ID do produto (somente números) -> " ID[$COUNT]
    done
-   DUPLICADA=$( mariadb -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT COUNT(*) FROM produto WHERE ID = ${ID[$COUNT]}" | awk -F"\t" 'NR!=1{print $1}')
+   DUPLICADA=$( $CONEXAO -Be "SELECT COUNT(*) FROM produto WHERE ID = ${ID[$COUNT]}" | awk -F"\t" 'NR!=1{print $1}')
    if [ $DUPLICADA -gt 0 ] ; then
    while [ $DUPLICADA -gt 0 ] ;do
     echo -e "${RED_BOLD}Já tem um item com ID ${ID[$COUNT]}${END_COLOR}\n${WHITE_BOLD}Dica:${END_COLOR}${BLUE_BOLD} Use um ID ACIMA de ${DISPONIVEL}${END_COLOR}"
     ID[$COUNT]=""
     while ! [[ ${ID[$COUNT]} =~ ^[0-9]+$ ]]; do
      read -p "Informe o ID do produto (somente números) -> " ID[$COUNT]
-     DUPLICADA=$( mariadb -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT COUNT(*) FROM produto WHERE ID = ${ID[$COUNT]}" 2> /dev/null | awk -F"\t" 'NR!=1{print $1}')
+     DUPLICADA=$( $CONEXAO -Be "SELECT COUNT(*) FROM produto WHERE ID = ${ID[$COUNT]}" 2> /dev/null | awk -F"\t" 'NR!=1{print $1}')
     done
    done
    fi
@@ -117,7 +117,7 @@ else
 fi
 for (( i=0 ; i <= $COUNT ; i++ )) ; do
  if \
-mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE << EOF 2>> erro.log
+$CONEXAO << EOF 2>> erro.log
 insert into produto (ID,NOME, MARCA,ESTOQUE, PRECO, DESCRICAO) values (${ID[$i]}, '${NOME[$i]^^}','${MARCA[$i]^^}', ${ESTOQUE[$i]}, ${PRECO[$i]}, '${DESC[$i]^^}');
 EOF
  then

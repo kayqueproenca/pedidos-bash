@@ -20,7 +20,7 @@ while : ; do
      echo $DELIMITADOR
      echo -e "Segue o retorno do item ${ITEM}"
      $CONEXAO -Be "SELECT * FROM produto WHERE NOME REGEXP '^${ITEM}';" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
-     RETORNO=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "select count(*) count from produto where NOME REGEXP '^${ITEM}';" | awk 'NR!=1{print $1}')
+     RETORNO=$($CONEXAO -Be "select count(*) count from produto where NOME REGEXP '^${ITEM}';" | awk 'NR!=1{print $1}')
      echo $DELIMITADOR
      echo -e "Total de itens econtrados: ${RETORNO}"
      if [ $RETORNO -eq 0 ] ; then
@@ -31,7 +31,7 @@ while : ; do
        readarray -t LISTA < <(mariadb -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT DISTINCT NOME FROM produto ;" | awk -F "\n" 'NR!=1{print $1}')
        echo -e "${WHITE_BOLD}Seguem algumas sugestões de itens${END_COLOR}"
        select OPC in "${LISTA[@]}" ; do
-         mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE NOME REGEXP '${OPC}';" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:"$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
+         $CONEXAO -Be "SELECT * FROM produto WHERE NOME REGEXP '${OPC}';" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:"$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
          COUNT=0
          break
        done
@@ -41,8 +41,8 @@ while : ; do
      echo $DELIMITADOR
      echo -e "Segue o retorno do tem:"
      mysql -u$DBUSER -p$DBPASS $BASE -Be "SELECT * FROM produto WHERE ID = ${ITEM} ;" | awk -F "\t" 'NR!=1{print "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO:" $6}'
-     RETORNO=$( mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT COUNT(*) FROM produto WHERE ID= ${ITEM};" | awk 'NR!=1{print $1}')
-     ESTOQUE=$( mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT ESTOQUE FROM produto WHERE ID = ${ITEM};" | awk 'NR!=1{print $1}')
+     RETORNO=$( $CONEXAO -Be "SELECT COUNT(*) FROM produto WHERE ID= ${ITEM};" | awk 'NR!=1{print $1}')
+     ESTOQUE=$( $CONEXAO -Be "SELECT ESTOQUE FROM produto WHERE ID = ${ITEM};" | awk 'NR!=1{print $1}')
      if [ $ESTOQUE -le 2 ] ; then 
        echo -e "\n${RED_BLINK}ATENÇÃO:\e[0m \e[31mITEM COM ESTOQUE BAIXO!${END_COLOR} \n"
      fi
@@ -130,24 +130,24 @@ while : ; do
  done
 
   if [ "$OPERADOR" = "<=" ] ; then
-   mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE ESTOQUE <= $ESTOQUE ORDER BY ESTOQUE;" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:  "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}' 
-   RETORNO=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "select count(*) count from produto where ESTOQUE <= $ESTOQUE';" | awk 'NR!=1{print $1}')
+   $CONEXAO -Be "SELECT * FROM produto WHERE ESTOQUE <= $ESTOQUE ORDER BY ESTOQUE;" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:  "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}' 
+   RETORNO=$($CONEXAO -Be "select count(*) count from produto where ESTOQUE <= $ESTOQUE';" | awk 'NR!=1{print $1}')
    echo $DELIMITADOR
    echo -e "Total de itens econtrados: ${RETORNO}"
    if [ $RETORNO -eq 0 ] ; then
     echo "Sem resultado para o item buscado!"
    fi
   elif [ "$OPERADOR" = ">=" ] ; then
-   mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE ESTOQUE >= $ESTOQUE ORDER BY ESTOQUE;" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:  "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
-   RETORNO=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "select count(*) count from produto where ESTOQUE >= $ESTOQUE;" | awk 'NR!=1{print $1}')
+   $CONEXAO -Be "SELECT * FROM produto WHERE ESTOQUE >= $ESTOQUE ORDER BY ESTOQUE;" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:  "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
+   RETORNO=$($CONEXAO -Be "select count(*) count from produto where ESTOQUE >= $ESTOQUE;" | awk 'NR!=1{print $1}')
    echo $DELIMITADOR
    echo -e "Total de itens econtrados: ${RETORNO}"
    if [ $RETORNO -eq 0 ] ; then
     echo "Sem resultado para o item buscado!"
    fi
   else
-   mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE ESTOQUE BETWEEN $ESTOQUE_INICIAL AND $ESTOQUE_FINAL ORDER BY ESTOQUE;" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:  "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
-   RETORNO=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "select count(*) count from produto where ESTOQUE BETWEEN $ESTOQUE_INICIAL AND $ESTOQUE_FINAL;" | awk 'NR!=1{print $1}')
+   $CONEXAO -Be "SELECT * FROM produto WHERE ESTOQUE BETWEEN $ESTOQUE_INICIAL AND $ESTOQUE_FINAL ORDER BY ESTOQUE;" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:  "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}'
+   RETORNO=$($CONEXAO -Be "select count(*) count from produto where ESTOQUE BETWEEN $ESTOQUE_INICIAL AND $ESTOQUE_FINAL;" | awk 'NR!=1{print $1}')
    echo $DELIMITADOR
    echo -e "Total de itens econtrados: ${RETORNO}"
    if [ $RETORNO -eq 0 ] ; then

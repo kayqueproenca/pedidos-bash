@@ -2,6 +2,7 @@
 
 #Caso queria debugar o código, descomente a linha abaixo
 #set -x
+
 source variaveis_gerais
 
 campo_mudar(){
@@ -10,6 +11,7 @@ campo_mudar(){
   CAMPO=""
   VALOR=""
   clear
+  mostrar_resultado ${ITEM}
   echo $DELIMITADOR
   echo "Qual valor a ser mudado?"
   echo $DELIMITADOR
@@ -96,7 +98,7 @@ consulta_item(){
        clear
        echo $DELIMITADOR
        $CONEXAO -Be "SELECT * FROM produto WHERE ID = $ITEM ;" | awk -F "\t" 'NR!=1{print "Segue os dados do item:\nID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: "$6}'
-       CONTAGEM=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT COUNT(ID) FROM produto WHERE ID = $ITEM ;" | awk -F "\n" 'NR!=1{print $1}')
+       CONTAGEM=$($CONEXAO -Be "SELECT COUNT(ID) FROM produto WHERE ID = $ITEM ;" | awk -F "\n" 'NR!=1{print $1}')
        if [ $CONTAGEM -le 0 ] ; then
         echo $DELIMITADOR
         echo "Sua busca Retornou 0 itens"
@@ -109,17 +111,17 @@ consulta_item(){
        fi
       else
        clear
-       readarray -t LISTA< <(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT DISTINCT NOME FROM produto WHERE NOME REGEXP '^$ITEM' ;" | awk -F "\n" 'NR!=1{print $1}')
+       readarray -t LISTA< <($CONEXAO -Be "SELECT DISTINCT NOME FROM produto WHERE NOME REGEXP '^$ITEM' ;" | awk -F "\n" 'NR!=1{print $1}')
        echo $DELIMITADOR
        echo "Selecione o item a ser mudado:" 
        select OPC in "${LISTA[@]}" ; do
         clear 
         echo "Segue as informações do item a ser mudado:"
-        mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE NOME = '$OPC';" | awk -F "\t" 'NR!=1{print "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: "$6 "\n"}'
-        REPETICAO=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT COUNT(NOME) FROM produto WHERE NOME = '$OPC' ;" | awk -F "\n" 'NR!=1{print $1}')
+        $CONEXAO -Be "SELECT * FROM produto WHERE NOME = '$OPC';" | awk -F "\t" 'NR!=1{print "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: "$6 "\n"}'
+        REPETICAO=$($CONEXAO -Be "SELECT COUNT(NOME) FROM produto WHERE NOME = '$OPC' ;" | awk -F "\n" 'NR!=1{print $1}')
          if [ $REPETICAO -gt 1 ] ; then
-            readarray -t ID< <(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT ID FROM produto WHERE NOME REGEXP '$OPC' ;" | awk -F "\n" 'NR!=1{print $1}')
-            NOME_ITEM=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT NOME FROM produto WHERE NOME REGEXP '$OPC' ;" | awk -F "\n" 'NR!=1{print $1}')
+            readarray -t ID< <($CONEXAO -Be "SELECT ID FROM produto WHERE NOME REGEXP '$OPC' ;" | awk -F "\n" 'NR!=1{print $1}')
+            NOME_ITEM=$($CONEXAO -Be "SELECT NOME FROM produto WHERE NOME REGEXP '$OPC' ;" | awk -F "\n" 'NR!=1{print $1}')
             echo $DELIMITADOR
             echo "Temos mais de um(a) ${NOME_ITEM}"
             echo "Selecione o ID do item que vai ser alterado:"
@@ -128,7 +130,7 @@ consulta_item(){
              break
             done
           else
-           ITEM=$(mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT ID FROM produto WHERE NOME = '$OPC';" | awk -F "\t" 'NR!=1{print $1}')
+           ITEM=$($CONEXAO -Be "SELECT ID FROM produto WHERE NOME = '$OPC';" | awk -F "\t" 'NR!=1{print $1}')
          fi
         break
        done
@@ -157,12 +159,16 @@ consulta_item(){
  campo_mudar
 }
 
+mostrar_resultado(){
+echo -e "Retorno do registro a ser ${BLUE_BOLD}ALTERADO${END_COLOR}"
+$CONEXAO -Be "SELECT * FROM produto WHERE ID = $1;" | awk -F "\t" 'NR!=1{print "Segue os dados do item:\nID: "$1 "\nNOME: " $2 "\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: "$6}'
+}
+
 mudar_item(){
  clear
    while : ; do
     echo $DELIMITADOR
-    echo "Item que vai ser alterado:"
-    mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE ID = $ITEM ;" | awk -F "\t" 'NR!=1{print "Segue os dados do item:\nID: "$1 "\nNOME: " $2 "\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: "$6}'
+    mostrar_resultado ${ITEM}
     echo -e "${BLUE_BOLD}${CAMPO}:${END_COLOR} ${RED_BOLD}${VALOR}${END_COLOR} ${WHITE_BLINK}<- NOVO VALOR${END_COLOR}"
     printf "\nConfirma alteração?\n"
     echo -e "${RED_BOLD}ATENÇÃO! Uma vez que confirmada, a mudança vai ser gravada${END_COLOR}"
@@ -170,13 +176,13 @@ mudar_item(){
      case $OPC in
       "SIM")
         if \
-mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE << EOF
+$CONEXAO << EOF
 UPDATE produto SET $CAMPO='$VALOR' WHERE ID = $ITEM
 EOF
     then
         clear
-        echo "${BLUE_BOLD}Alteração feita com sucesso!!${END_COLOR}"
-        mysql -u$DBUSER -p$DBPASS -h$DBHOST $BASE -Be "SELECT * FROM produto WHERE ID = $ITEM ;" | awk -F "\t" 'NR!=1{print "Segue os dados do item:\nID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6 }'
+        echo -e "${BLUE_BOLD}Alteração feita com sucesso!!${END_COLOR}"
+        $CONEXAO -Be "SELECT * FROM produto WHERE ID = $ITEM ;" | awk -F "\t" 'NR!=1{print "Segue os dados do item:\nID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6 }'
 
       else
         echo -e "{$RED_BOLD}Falha na alteração${END_COLOR}"

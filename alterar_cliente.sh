@@ -3,11 +3,30 @@ source ./variaveis_gerais
 
 #set -x
 
+tipo_alteracao(){
+ clear
+ local OPC=""
+ local OPERACAO=""
+ echo "Módulo de alteração de cliente"
+ echo "Selecione o tipo de alteração a ser feita"
+ select OPC in "MUDAR" "APAGAR" ; do
+  if [ "$OPC" = "MUDAR" ] ; then
+   OPERACAO="MUDAR"
+   break
+  else
+   OPERACAO="DELETAR"
+   break
+  fi
+ done
+ consultar_cliente $OPERACAO
+}
+
 #Aqui vamos ter a consulta do cliente, onde faremos a busca, e vamos confirmar se o registro selecionado é que vamos alterar
 consultar_cliente(){
 while : ; do
   clear
   CLIENTE=""
+  local OPERACAO=$1
   local OPC=""
   local CONTAGEM=0
   echo "ALTERAÇÃO DE CLIENTE"
@@ -50,11 +69,21 @@ while : ; do
    continue
   fi
 done
-campo_mudar
+
+if [ "$OPERACAO" = "MUDAR" ] ; then
+  campo_mudar
+else
+  deletar
+fi
 }
 
 mostrar_resultado(){
- echo "Dados do registro a ser mudado:"
+ if [ $OPERACAO = "MUDAR" ] ; then
+  CABECALHO="Dados do registro a ser ${BLUE_BOLD}mudado${END_COLOR}:"
+ else
+  CABECALHO="Dados do registro a ser ${RED_BOLD}deletado${END_COLOR}"
+ fi
+ echo -e $CABECALHO
  $CONEXAO -Be "SELECT * FROM cliente WHERE CPF = $1;" | awk -F "\t" 'NR!=1 {print "\nCPF: " $1"\nNOME: " $2 "\nCOMPRAS: " $3 "\nFIDELIDADE: " $4 "\nDESCONTO: " $5"%"}'
 }
 
@@ -109,7 +138,7 @@ campo_mudar(){
       done
       break ;;
     "VOLTAR")
-       consultar_cliente
+       tipo_alteracao
      esac
   done
   clear
@@ -130,8 +159,76 @@ campo_mudar(){
   else
    continue
   fi
+done
+alterar
+}
 
+alterar(){
+ if [ "$VALOR" = "STANDARD" ] ; then
+   DESCONTO=1
+   QNT_COMPRAS=10
+ elif [ "$VALOR" = "SILVER" ] ; then
+   DESCONTO=3
+   QNT_COMPRAS=20
+ elif [ "$VALOR" = "GOLD" ] ; then
+   DESCONTO=5
+   QNT_COMPRAS=50
+ else
+   DESCONTO=10
+   QNT_COMPRAS=100
+ fi
+
+ if [ "$CAMPO" = "FIDELIDADE" ] ; then
+  if \
+$CONEXAO << EOF
+UPDATE cliente SET ${CAMPO}='${VALOR}', QNT_COMPRAS=${QNT_COMPRAS}, DESCONTO=${DESCONTO} WHERE CPF = ${CLIENTE_MUDAR}
+EOF
+  then
+   echo "Alteração feita com sucesso!"
+  else
+   echo "Erro no procedimento"
+  fi
+ else
+  if \
+$CONEXAO << EOF
+UPDATE cliente SET ${CAMPO}='${VALOR^^}' WHERE CPF = ${CLIENTE_MUDAR}
+EOF
+  then
+   echo "Alteração feita com sucesso!"
+   tipo_alteracao
+  else
+   echo "Erro no procedimento!"
+   tipo_alteracao
+  fi
+ fi
+}
+
+deletar(){
+ clear
+ local OPC=""
+ mostrar_resultado ${CLIENTE_MUDAR}
+ echo -e "\nConfirmar a exclusão?"
+ echo -e "${RED_BOLD}ATENÇÃO!${END_COLOR}\nEssa operação ${RED_BLINK}NÃO${END_COLOR} pode ser desfeita"
+ select OPC in "SIM" "NÃO" ; do
+  case $OPC in
+ "SIM")
+   if \
+$CONEXAO << EOF
+DELETE FROM cliente WHERE CPF = ${CLIENTE_MUDAR}
+EOF
+   then
+    echo "Exclusão feita com sucesso"
+    tipo_alteracao
+   else
+    echo "Falha na exclusão"
+    tipo_alteracao
+   fi
+  break;;
+ "NÃO")
+   tipo_alteracao
+   break ;;
+  esac
  done
 }
 
-consultar_cliente
+tipo_alteracao

@@ -20,8 +20,9 @@ while : ; do
    valida_cpf ${CPF[$COUNT]}
 
    if [ "$CPF_VALIDO" = "false" ] ; then
-    echo -e "${RED_BOLD}CPF INFORMADO INVÁLIDO${END_COLOR}"
     while true ; do
+     clear
+     echo -e "${RED_BOLD}CPF INFORMADO INVÁLIDO${END_COLOR}"
      CPF[$COUNT]=""
      while ! [[ ${CPF[$COUNT]} =~ ^[0-9]+$ ]] ; do
       read -p "DIGITE O CPF DO CLIENTE (SOMENTE NÚMEROS) -> " CPF[$COUNT]

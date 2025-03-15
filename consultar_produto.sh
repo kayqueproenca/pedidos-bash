@@ -130,23 +130,29 @@ while : ; do
  done
 
   if [ "$OPERADOR" = "<=" ] ; then
-   $CONEXAO -Be "SELECT * FROM produto WHERE ESTOQUE <= $ESTOQUE ORDER BY ESTOQUE;" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\n MARCA: "$3"\nESTOQUE: "$4"\nPREÇO: "$5"\nDESCRIÇÃO: "$6"\n" ; if ($4 < 3 ) { print "\nATENÇÃO: ESTOQUE BAIXO!\n";}}' | less
+   clear
+   echo -e "Segue o retorno de itens com estoque MENOR QUE ${BLUE_BOLD}${ESTOQUE}${END_COLOR}:"
+   $CONEXAO -e "SELECT * FROM produto WHERE ESTOQUE <= $ESTOQUE ORDER BY ESTOQUE;"
    RETORNO=$($CONEXAO -Be "select count(*) count from produto where ESTOQUE <= $ESTOQUE;" | awk 'NR!=1{print $1}')
    echo $DELIMITADOR
-   echo -e "Total de itens econtrados: ${RETORNO}"
+   echo -e "Total de itens econtrados: ${RETORNO}\nOBS: Itens ordenados conforme o estoque"
    if [ $RETORNO -eq 0 ] ; then
     echo "Sem resultado para o item buscado!"
    fi
   elif [ "$OPERADOR" = ">=" ] ; then
-   $CONEXAO -Be "SELECT * FROM produto WHERE ESTOQUE >= $ESTOQUE ORDER BY ESTOQUE;" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:  "$4"\nPREÇO: "$5"\nDESCRIÇÃO: "$6"\n"; if ($4 < 3 ) { print "  ATENÇÃO: ESTOQUE BAIXO!\n";}}' | less
+   clear
+   echo -e "Segue o retorno de itens com estoque MAIOR QUE ${BLUE_BOLD}${ESTOQUE}${END_COLOR}:"
+   $CONEXAO -e "SELECT * FROM produto WHERE ESTOQUE >= $ESTOQUE ORDER BY ESTOQUE;"
    RETORNO=$($CONEXAO -Be "select count(*) count from produto where ESTOQUE >= $ESTOQUE;" | awk 'NR!=1{print $1}')
    echo $DELIMITADOR
-   echo -e "Total de itens econtrados: ${RETORNO}"
+   echo -e "Total de itens econtrados: ${RETORNO}\nOBS: Itens ordenados conforme o estoque"
    if [ $RETORNO -eq 0 ] ; then
     echo "Sem resultado para o item buscado!"
    fi
   else
-   $CONEXAO -Be "SELECT * FROM produto WHERE ESTOQUE BETWEEN $ESTOQUE_INICIAL AND $ESTOQUE_FINAL ORDER BY ESTOQUE;" | awk -F "\t" 'NR!=1{print "###########################\n" "ID: "$1"\nNOME: "$2"\nMARCA: "$3"\nESTOQUE:  "$4"\nPREÇO: "$5"\nDESCRIÇÃO: " $6"\n" ; if ($4 < 3 ) { print "ATENÇÃO: ESTOQUE BAIXO!\n";}}' | less
+   clear
+   echo -e "Segue o retorno de itens com estoque MAIOR QUE ${BLUE_BOLD}${ESTOQUE_INICIAL}${END_COLOR} e MENOR QUE ${BLUE_BOLD}${ESTOQUE_FINAL}${END_COLOR}:"
+   $CONEXAO -e "SELECT * FROM produto WHERE ESTOQUE BETWEEN $ESTOQUE_INICIAL AND $ESTOQUE_FINAL ORDER BY ESTOQUE;"
    RETORNO=$($CONEXAO -Be "select count(*) count from produto where ESTOQUE BETWEEN $ESTOQUE_INICIAL AND $ESTOQUE_FINAL;" | awk 'NR!=1{print $1}')
    echo $DELIMITADOR
    echo -e "Total de itens econtrados: ${RETORNO}"

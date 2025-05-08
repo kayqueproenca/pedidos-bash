@@ -1,36 +1,56 @@
 #! /usr/bin/env bash
+
+#USA VARIAVEIS IMPORTANTES, COMO A $CONEXAO, QUE DÁ ACESSO AO BANCO DE DADOS, ENTRE OUTRAS, COMO AS QUE DEFINEM AS CORES
 source ./variaveis_gerais
 
 #set -x
 
+#CONSULTA DO CLIENTE, CASO ELE SEJA REGISTRADO
 cliente_registrado(){
+ CLIENTE=""
  CLIENTE_PEDIDO=""
+ local AVISO=""
  local COUNT=0
  local LISTA_CLIENTE=()
+ local QNT_RESULTADO=0
  while : ; do
   clear
   echo $DELIMITADOR
   echo "Cliente registrado?"
   select OPC in "SIM" "NÃO" ; do
     if [ $REPLY -eq 1 ] ; then
+    while [ $QNT_RESULTADO -eq 0 ]; do
      clear
+     CLIENTE=""
      echo $DELIMITADOR
-     read -p "Informe o NOME/CPF do cliente: " CLIENTE
+     echo -e $AVISO
+      read -p "Informe o NOME/CPF do cliente: " CLIENTE
+      if [[ $CLIENTE =~ ^[a-z|A-Z] ]] ;then
+        QNT_RESULTADO=$( $CONEXAO -Be "SELECT COUNT(NOME_CLIENTE) FROM cliente WHERE NOME_CLIENTE REGEXP '^$CLIENTE';" 2> /dev/null | awk -F "\n" 'NR!=1 {print $1}')
+      elif [[ $CLIENTE =~ ^[0-9]+$ ]];then
+        QNT_RESULTADO=$( $CONEXAO -Be "SELECT COUNT(NOME_CLIENTE) FROM cliente WHERE CPF = $CLIENTE;" 2> /dev/null | awk -F "\n" 'NR!=1 {print $1}')
+      else
+        AVISO="O campo não pode ficar em branco"
+      fi
+       if [ $QNT_RESULTADO -eq 0 ] ; then
+         AVISO="${RED_BOLD}Nenhum resultado encontrado para:${END_COLOR} ${CLIENTE}"
+       fi
+     done
      if [[ $CLIENTE =~ ^[a-z|A-Z] ]]; then
-       mapfile -t LISTA_CLIENTE< <($CONEXAO -Be "SELECT NOME_CLIENTE FROM cliente WHERE NOME_CLIENTE REGEXP '^$CLIENTE'" | awk -F "\n" 'NR!=1 {print $1}')
-       clear
-       echo -e "Segue o resultado para o ${BLUE_BOLD}${CLIENTE^^}${END_COLOR}"
-       select LISTA in "${LISTA_CLIENTE[@]}"; do
-        CLIENTE=$LISTA
-        break
-       done
-       clear
-       echo $DELIMITADOR
-       echo "Resultado da busca:"
-       $CONEXAO -Be "SELECT CPF, NOME_CLIENTE, FIDELIDADE FROM cliente WHERE NOME_CLIENTE = '$CLIENTE';" | awk -F "\t" 'NR!=1 {print "CPF: "$1"\nNOME: "$2"\nFIDELIDADE: "$3}'
-       CLIENTE_PEDIDO=$($CONEXAO -Be "Select CPF FROM cliente WHERE NOME_CLIENTE = '$CLIENTE';" | awk -F "\t" 'NR!=1 {print $1}')
-       DESCONTO=$($CONEXAO -Be "Select DESCONTO FROM cliente WHERE CPF = $CLIENTE_PEDIDO;" | awk -F"\t" 'NR!=1 {print $1}')
-       break
+       mapfile -t LISTA_CLIENTE< <($CONEXAO -Be "SELECT NOME_CLIENTE FROM cliente WHERE NOME_CLIENTE REGEXP '^$CLIENTE';" | awk -F "\n" 'NR!=1 {print $1}')
+         clear
+         echo -e "Segue o resultado para o ${BLUE_BOLD}${CLIENTE^^}${END_COLOR}"
+         select LISTA in "${LISTA_CLIENTE[@]}"; do
+          CLIENTE=$LISTA
+          break
+         done
+         clear
+         echo $DELIMITADOR
+         echo "Resultado da busca:"
+         $CONEXAO -Be "SELECT CPF, NOME_CLIENTE, FIDELIDADE FROM cliente WHERE NOME_CLIENTE = '$CLIENTE';" | awk -F "\t" 'NR!=1 {print "CPF: "$1"\nNOME: "$2"\nFIDELIDADE: "$3}'
+         CLIENTE_PEDIDO=$($CONEXAO -Be "Select CPF FROM cliente WHERE NOME_CLIENTE = '$CLIENTE';" | awk -F "\t" 'NR!=1 {print $1}')
+         DESCONTO=$($CONEXAO -Be "Select DESCONTO FROM cliente WHERE CPF = $CLIENTE_PEDIDO;" | awk -F"\t" 'NR!=1 {print $1}')
+         break
      else
        $CONEXAO -Be "SELECT CPF, NOME_CLIENTE, FIDELIDADE FROM cliente WHERE CPF = $CLIENTE;" | awk -F "\t" 'NR!=1 {print "CPF: "$1"\nNOME: "$2"\nFIDELIDADE: "$3}'
        CLIENTE_PEDIDO=$CLIENTE
@@ -54,6 +74,8 @@ cliente_registrado(){
      break
    elif [ $REPLY -eq 2 ] ; then
      SAIR="nao"
+     QNT_RESULTADO=0
+     CLIENTE=""
      break
    else
     clear
@@ -71,6 +93,7 @@ cliente_registrado(){
  lista_itens
 }
 
+#EXCLUSIVA PARA SOMENTE MOSTRAR O CLIENTE QUE FOI CONSULTADO
 mostrar_cliente(){
  if [ $1 -eq 11111111111 ] ; then
   echo -e "Compra com cliente não cadastrado\n${RED_BOLD}SEM DIREITO A DESCONTO FIDELIDADE${END_COLOR}"
@@ -80,6 +103,7 @@ mostrar_cliente(){
  fi
 }
 
+#EXCLUSIVA PARA SOMENTE MOSTRAR OS PRODUTOS QUE FORAM CONSULTADOS, E QUE VÃO SER INTEGRADOS AO PEDIDO
 mostrar_produto(){
 for (( i=0 ; i<= $COUNT_ITEM ; i++ )); do
  $CONEXAO -Be "SELECT NOME, PRECO FROM produto WHERE ID = ${LISTA_ITEM[$i]};" 2> /dev/null | awk -F"\t" 'NR!=1 {print $1 "  R$"$2}'
@@ -103,7 +127,7 @@ lista_itens(){
     echo -e "\nLista de itens:"
     mostrar_produto
     echo -e "\n
-Subtotal: R\$ ${SUBTOTAL}"
+    Subtotal: R\$ ${SUBTOTAL}"
     echo "Coloque o CÓDIGO/NOME do produto:"
     read -p "-> " ITEM
    done 
@@ -187,7 +211,37 @@ Subtotal: R\$ ${SUBTOTAL}"
     break
    fi
  done
+ confirmar_compra
+}
+
+confirmar_compra() {
+ NUMERO_PEDIDO=0
+ while : ; do
+  clear
+  mostrar_cliente $CLIENTE_PEDIDO
+  NUMERO_PEDIDO=$(date +%Y%m%d)
+  echo -e "${BLUE_BOLD}PEDIDO Nº ${END_COLOR} $NUMERO_PEDIDO"
+  echo -e "Lista de produtos:\n"
+  mostrar_produto
+  echo -e "\nSUBTOTAL R\$ $SUBTOTAL"
+  echo "Confirma pedido?"
+  select OPC in "SIM" "NÃO" ; do
+   if [ $REPLY -eq 1 ] ; then
+     SAIR="S"
+     break
+   else
+    SAIR="N"
+    echo -e "${RED_BOLD}PEDIDO CANCELADO!${END_COLOR}"
+    sleep 1s
+    cliente_registrado
+   fi
+  done
+  if [ "$SAIR" = "S" ] ; then
+    echo ${LISTA_ITEM[@]}
+    break
+  fi
+ done
 }
 
 cliente_registrado
-echo $SUBTOTAL
+

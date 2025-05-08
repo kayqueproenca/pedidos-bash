@@ -25,6 +25,7 @@ cliente_registrado(){
      echo $DELIMITADOR
      echo -e $AVISO
       read -p "Informe o NOME/CPF do cliente: " CLIENTE
+      AVISO=""
       if [[ $CLIENTE =~ ^[a-z|A-Z] ]] ;then
         QNT_RESULTADO=$( $CONEXAO -Be "SELECT COUNT(NOME_CLIENTE) FROM cliente WHERE NOME_CLIENTE REGEXP '^$CLIENTE';" 2> /dev/null | awk -F "\n" 'NR!=1 {print $1}')
       elif [[ $CLIENTE =~ ^[0-9]+$ ]];then
